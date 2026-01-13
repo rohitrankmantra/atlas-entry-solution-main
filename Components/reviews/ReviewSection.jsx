@@ -1,61 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Star, X } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axiosInstance from "@/utils/axios";
 
 export default function ReviewSection() {
   const [showModal, setShowModal] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      name: "John D.",
-      message:
-        "The team was extremely professional and transparent. Highly recommended.",
-      date: "Jan 2025",
-    },
-    {
-      id: 2,
-      name: "Maria S.",
-      message:
-        "Excellent support and clear communication throughout the process.",
-      date: "Dec 2024",
-    },
-    {
-      id: 3,
-      name: "Ahmed K.",
-      message:
-        "Smooth experience with constant guidance. Very reliable service.",
-      date: "Nov 2024",
-    },
-  ]);
+  // 🔹 Fetch reviews on load
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const res = await axiosInstance.get("/api/reviews");
+        setReviews(res.data.data);
+      } catch (err) {
+        toast.error(err);
+      }
+    };
 
-  const submitReview = (e) => {
+    fetchReviews();
+  }, []);
+
+  // 🔹 Submit review
+  const submitReview = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     const formData = new FormData(e.target);
 
-    const newReview = {
-      id: Date.now(),
+    const payload = {
       name: formData.get("name"),
+      email: formData.get("email"),
       message: formData.get("message"),
-      date: new Date().toLocaleString("en-US", {
-        month: "short",
-        year: "numeric",
-      }),
     };
 
-    setReviews([newReview, ...reviews]);
+    try {
+      const res = await axiosInstance.post("/api/reviews", payload);
 
-    toast.success("Thank you! Your review has been added.", {
-      position: "top-center",
-      style: { background: "#1C398E", color: "#fff" },
-    });
+      // instant UI update
+      setReviews((prev) => [res.data.data, ...prev]);
 
-    e.target.reset();
-    setShowModal(false);
+      toast.success("Thank you! Your review has been added.", {
+        position: "top-center",
+        style: { background: "#1C398E", color: "#fff" },
+      });
+
+      e.target.reset();
+      setShowModal(false);
+    } catch (err) {
+      toast.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -78,10 +78,9 @@ export default function ReviewSection() {
         <div className="grid md:grid-cols-2 gap-6 mb-12">
           {reviews.map((review) => (
             <div
-              key={review.id}
+              key={review._id}
               className="bg-white p-6 rounded-2xl shadow-lg border hover:shadow-xl transition"
             >
-              {/* Stars */}
               <div className="flex items-center gap-1 mb-2">
                 {[...Array(5)].map((_, i) => (
                   <Star
@@ -101,7 +100,11 @@ export default function ReviewSection() {
                 <span className="font-semibold text-gray-700">
                   {review.name}
                 </span>{" "}
-                • {review.date}
+                •{" "}
+                {new Date(review.createdAt).toLocaleString("en-US", {
+                  month: "short",
+                  year: "numeric",
+                })}
               </p>
             </div>
           ))}
@@ -147,6 +150,7 @@ export default function ReviewSection() {
                 className="modal-input"
               />
               <input
+                name="email"
                 type="email"
                 placeholder="Your Email"
                 className="modal-input"
@@ -161,12 +165,11 @@ export default function ReviewSection() {
 
               <button
                 type="submit"
-                className="w-full bg-[#1C398E] text-white py-3 rounded-xl font-semibold hover:scale-95 transition"
+                disabled={loading}
+                className="w-full bg-[#1C398E] text-white py-3 rounded-xl font-semibold hover:scale-95 transition disabled:opacity-60"
               >
-                Submit Review
+                {loading ? "Submitting..." : "Submit Review"}
               </button>
-
-             
             </form>
           </div>
         </div>
