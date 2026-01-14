@@ -148,7 +148,7 @@ export default function Footer() {
             </a>
 
             <a
-              href=""
+              href="https://maps.app.goo.gl/MCYXE9FLx8ndbJ1dA?g_st=iw"
               className="flex items-center gap-3 hover:text-[#1C398E] text-gray-600 text-sm mb-5 text-left"
             >
               <MapPin size={18} /> Oporto, Portugal
